@@ -44,7 +44,7 @@ pipeline {
         script { 
           docker.image(env.CI_IMAGE_NAME).inside {
             sh 'pip install -r requirements.txt' 
-            sh 'pip install flake8 black mypyflake8 mypy' 
+            sh 'pip install flake8 black mypy' 
             sh 'make lint' 
           } 
         } 
