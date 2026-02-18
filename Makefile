@@ -10,7 +10,7 @@ help:             ## Show the help.
 
 
 
-.PHONY: lint
+.PHONY: lint reformat
 reformat:             ## Run pep8, black, mypy linters.
 	$(ENV_PREFIX)black  --pyi -l 79 -t py311 src/
 	$(ENV_PREFIX)black  --pyi -l 79 -t py311 tests/
