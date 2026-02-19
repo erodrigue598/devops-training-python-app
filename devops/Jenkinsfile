@@ -20,7 +20,7 @@ pipeline {
    parameters {
     booleanParam(
       name: 'RUN_CD',
-      defaultValue: false,
+      defaultValue: true,
       description: 'Ejecutar CD manualmente'
     )
   }
@@ -106,6 +106,8 @@ stage('CD') {
       // Ejercicio 6.2 - Selección de entorno 
       env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV' 
       echo "Deploying to ${env.DEPLOY_ENV}" 
+       // Ejercicio 6.3 - Parámetros (build parameters) para activar/desactivar comportamiento
+      echo "CD habilitado: RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}" 
       
       sh 'docker compose up -d'
       sh 'sleep 5'
