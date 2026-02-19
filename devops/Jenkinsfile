@@ -25,6 +25,12 @@ pipeline {
     )
   }
 
+     environment {
+     IMAGE_NAME = "mi-imagen:${BUILD_NUMBER}"
+     APP_URL = "http://localhost:5001/" 
+   }
+
+
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
   agent any
 
@@ -108,6 +114,10 @@ stage('CD') {
       echo "Deploying to ${env.DEPLOY_ENV}" 
        // Ejercicio 6.3 - Parámetros (build parameters) para activar/desactivar comportamiento
       echo "CD habilitado: RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}" 
+// ejercicio 6.4   Variables de entorno
+      echo "Usando imagen: ${env.IMAGE_NAME}" 
+      sh "echo Aplicación disponible en: ${APP_URL}"   
+
       
       sh 'docker compose up -d'
       sh 'sleep 5'
