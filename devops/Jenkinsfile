@@ -80,7 +80,21 @@ stage('Build image') {
     }
   }
 }
-
+// ejercicio 6
+stage('CD') {
+  steps {
+    script {
+      sh 'docker compose up -d'
+      sh 'sleep 5'
+      sh 'docker compose logs <servicio>'
+    }
+  }
+  post {
+    always {
+      sh 'docker compose down --volumes'
+    }
+  }
+}
 
 
     
