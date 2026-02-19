@@ -5,6 +5,11 @@
   piezas (stages, agents, funciones Groovy, Docker build, docker compose, etc.)
   hasta construir un pipeline CI/CD completo.
 */
+def runInDocker(String image, Closure body) {
+    docker.image(image).inside {
+        body()
+    }
+}
 
 pipeline {
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
@@ -42,7 +47,8 @@ pipeline {
     stage('CI - Lint') { 
       steps {
         script { 
-          docker.image(env.CI_IMAGE_NAME).inside {
+      //    docker.image(env.CI_IMAGE_NAME).inside {
+            runInDocker(env.CI_IMAGE_NAME) {
             sh 'python3 -m pip install -r requirements.txt' 
             sh 'python3 -m pip install flake8 black mypy' 
             sh 'make lint' 
@@ -56,7 +62,8 @@ pipeline {
     stage('CI - Test') { 
       steps { 
         script {
-          docker.image(env.CI_IMAGE_NAME).inside {
+        //  docker.image(env.CI_IMAGE_NAME).inside {
+            runInDocker(env.CI_IMAGE_NAME) {
             sh 'pytest -q' 
           } 
         } 
