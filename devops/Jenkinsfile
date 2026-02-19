@@ -76,7 +76,7 @@ stage('Build image') {
   steps {
     script {
       env.APP_IMAGE_NAME = "python-app:${env.BUILD_NUMBER}"
-      docker.build(env.APP_IMAGE_NAME, "-f devops/Dockerfile .")
+      docker.build(env.APP_IMAGE_NAME, "-f devops/ci.Dockerfile .")
     }
   }
 }
