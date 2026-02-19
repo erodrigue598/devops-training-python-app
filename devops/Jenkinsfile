@@ -13,6 +13,18 @@ def runInDocker(String image, Closure body) {
 }
 
 pipeline {
+
+  // =========================
+  // Ejercicio 6.3 (parámetros)
+  // =========================
+   parameters {
+    booleanParam(
+      name: 'RUN_CD',
+      defaultValue: false,
+      description: 'Ejecutar CD manualmente'
+    )
+  }
+
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
   agent any
 
@@ -82,6 +94,13 @@ stage('Build image') {
 }
 // ejercicio 6
 stage('CD') {
+  when { 
+    anyOf { 
+      expression { return params.RUN_CD } 
+      branch 'develop' 
+      branch 'master' 
+    } 
+  }
   steps {
     script {
       sh 'docker compose up -d'
