@@ -5,6 +5,7 @@
   piezas (stages, agents, funciones Groovy, Docker build, docker compose, etc.)
   hasta construir un pipeline CI/CD completo.
 */
+//ejercicio 4
 def runInDocker(String image, Closure body) {
     docker.image(image).inside {
         body()
@@ -47,7 +48,7 @@ pipeline {
     stage('CI - Lint') { 
       steps {
         script { 
-      //    docker.image(env.CI_IMAGE_NAME).inside {
+      //    docker.image(env.CI_IMAGE_NAME).inside { en el 3 se cambia en el 4
             runInDocker(env.CI_IMAGE_NAME) {
             sh 'python3 -m pip install -r requirements.txt' 
             sh 'python3 -m pip install flake8 black mypy' 
@@ -69,7 +70,20 @@ pipeline {
         } 
       } 
     }
-      
+    
+    // ejercicio 5
+stage('Build image') {
+  steps {
+    script {
+      env.APP_IMAGE_NAME = "python-app:${env.BUILD_NUMBER}"
+      docker.build(env.APP_IMAGE_NAME, "-f devops/Dockerfile .")
+    }
+  }
+}
+
+
+
+    
     stage('Test') {
       /*
         `agent` dentro de un stage permite que SOLO ese stage se ejecute en un contexto concreto.
