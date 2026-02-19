@@ -103,6 +103,10 @@ stage('CD') {
   }
   steps {
     script {
+      // Ejercicio 6.2 - Selección de entorno 
+      env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV' 
+      echo "Deploying to ${env.DEPLOY_ENV}" 
+      
       sh 'docker compose up -d'
       sh 'sleep 5'
       sh 'docker compose logs app'
