@@ -130,21 +130,7 @@ stage('CD') {
     }
   }
 }
-post {
-  always {
-    echo "Limpieza global del pipeline…"
-    sh 'docker compose down --volumes || true'
-    sh "docker rmi ${env.IMAGE_NAME} || true"
-  }
-  success {
-    echo "SUCCESS"
-  }
-  failure {
-    echo "FAILURE"
-    echo "Mostrando logs para diagnóstico:"
-    sh 'docker compose logs app || true'
-  }
-}
+
 
 
     
@@ -173,4 +159,19 @@ post {
             }
         }
   }
+      post {
+        always {
+        echo "Limpieza global del pipeline…"
+         sh 'docker compose down --volumes || true'
+        sh "docker rmi ${env.IMAGE_NAME} || true"
+      }
+     success {
+        echo "SUCCESS"
+      }
+   failure {
+      echo "FAILURE"
+      echo "Mostrando logs para diagnóstico:"
+      sh 'docker compose logs app || true'
+  }
+}
 }
