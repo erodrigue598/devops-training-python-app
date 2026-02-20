@@ -125,11 +125,11 @@ stage('CD') {
       sh 'docker compose logs app'
     }
   }
-  post {
-    always {
-      sh 'docker compose down --volumes'
-    }
-  }
+//  post {
+//    always {
+ //     sh 'docker compose down --volumes'
+ //   }
+ // }
 }
 
 
@@ -141,7 +141,7 @@ stage('CD') {
         En este caso, usamos Docker como capa de virtualizacion: los comandos se ejecutan dentro
         de un contenedor temporal.
       */
-      agent {
+     agent {
         docker {
           image 'maven:3.8.6-openjdk-11-slim'
         }
@@ -149,7 +149,7 @@ stage('CD') {
       steps {
         sh 'mvn -version'
         sh 'echo "Stage dummy. En la Practica 2 ejecutaras aqui los tests unitarios."'
-      }
+      }*/
     }
    
     
