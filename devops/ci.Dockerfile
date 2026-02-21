@@ -11,7 +11,4 @@ RUN pip install --upgrade pip && \
     pip install -r /tmp/requirements.txt flake8 mypy
 
 WORKDIR /app
-# Solo copiar el código si COPY_CODE=true (GitHub Actions) 
-RUN if [ "$COPY_CODE" = "true" ]; then echo "Copiando código"; fi 
-COPY . . 
-CMD ["bash"]
+COPY . .
