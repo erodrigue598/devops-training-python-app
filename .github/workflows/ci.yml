@@ -98,4 +98,18 @@ jobs:
           echo "Artifactory URL: ${{ vars.ARTIFACTORY_URL }}" 
           # Los secrets no se imprimen por seguridad 
           echo "Usuario del registry: ${{ secrets.REGISTRY_USER }}" 
-          # NO imprimas el password
+          # NO imprimas el password 
+
+
+  cd:
+    runs-on: ubuntu-latest 
+    needs: ci 
+    if: ${{ inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
+    steps: 
+     - name: Simular despliegue
+       run: |
+          echo "=== CD ACTIVADO ===" 
+          echo "Branch: ${{ github.ref_name }}" 
+          echo "RUN_CD: ${{ inputs.RUN_CD }}" 
+          echo "Desplegando en entorno: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}" 
+          echo "Imagen a desplegar: $IMAGE_NAME:latest"
