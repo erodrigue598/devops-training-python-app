@@ -106,6 +106,9 @@ jobs:
     needs: ci 
     if: ${{ inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
     steps: 
+     - name: Checkout 
+       uses: actions/checkout@v4
+       
      - name: Simular despliegue
        run: |
           echo "=== CD ACTIVADO ===" 
@@ -113,3 +116,22 @@ jobs:
           echo "RUN_CD: ${{ inputs.RUN_CD }}" 
           echo "Desplegando en entorno: ${{ github.ref_name == 'master' && 'PRO' || 'DEV' }}" 
           echo "Imagen a desplegar: $IMAGE_NAME:latest"
+     - name: Docker Compose UP 
+       run: | 
+          echo "Levantando servicios con docker compose..." 
+          docker compose -f docker-compose.yml up -d     
+     - name: Logs del contenedor principal 
+       run: | 
+           echo "=== LOGS DEL SERVICIO APP ===" 
+           docker compose -f docker-compose.yml logs app
+
+     - name: Cleanup (siempre) 
+       if: always() 
+       run: | 
+          echo "=== CLEANUP ===" 
+          docker compose -f docker-compose.yml down -v 
+          echo "Servicios eliminados"
+
+
+
+          
