@@ -71,8 +71,15 @@ jobs:
           echo "IMAGE_NAME via syntax: ${{ env.IMAGE_NAME }}" 
           echo "APP_URL via syntax: ${{ env.APP_URL }}"
       
-     - name: Build CI image 
-       run: docker build -t ci-image -f devops/ci.Dockerfile . 
+  #   - name: Build CI image 
+  #     run: docker build -t ci-image -f devops/ci.Dockerfile . 
+     - name: Build CI image con tag usado por docker-compose 
+       run: | 
+          docker build \
+             -t $IMAGE_NAME:latest \
+             -f devops/ci.Dockerfile . 
+          echo "Imagen construida: $IMAGE_NAME:latest"
+          
      - name: Lint 
        run: docker run --rm ci-image make lint 
      - name: Test 
