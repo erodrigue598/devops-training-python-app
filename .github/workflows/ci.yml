@@ -80,10 +80,13 @@ jobs:
              -f devops/ci.Dockerfile . 
           echo "Imagen construida: $IMAGE_NAME:latest"
           
-     - name: Lint 
-       run: docker run --rm ci-image make lint 
+     - name: Lint      
+      # run: docker run --rm ci-image make lint 
+        run: docker run --rm $IMAGE_NAME:latest make lint
+       
      - name: Test 
-       run: docker run --rm ci-image make test
+     #  run: docker run --rm ci-image make test
+        run: docker run --rm $IMAGE_NAME:latest make test
 
      - name: Mostrar inputs de workflow_dispatch 
        run: | 
