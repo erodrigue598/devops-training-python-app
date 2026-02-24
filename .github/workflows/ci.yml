@@ -74,13 +74,7 @@ jobs:
   #   - name: Build CI image 
   #     run: docker build -t ci-image -f devops/ci.Dockerfile . 
 
-     - name: Lint      
-        # run: docker run --rm ci-image make lint 
-       run: docker run --rm $IMAGE_NAME:latest make lint
-       
-     - name: Test 
-        #  run: docker run --rm ci-image make test
-       run: docker run --rm $IMAGE_NAME:latest make test
+   
      - name: Build CI image con tag usado por docker-compose 
        run: | 
           docker build \
@@ -88,31 +82,36 @@ jobs:
              -f devops/ci.Dockerfile . 
           echo "Imagen construida: $IMAGE_NAME:latest"
           
+     - name: Lint      
+        # run: docker run --rm ci-image make lint 
+       run: docker run --rm $IMAGE_NAME:latest make lint
+       
+     - name: Test 
+        #  run: docker run --rm ci-image make test
+       run: docker run --rm $IMAGE_NAME:latest make test     
   
 
      - name: Mostrar inputs de workflow_dispatch 
        run: | 
           echo "RUN_CD: ${{ inputs.RUN_CD }}" 
           echo "DEPLOY_ENV: ${{ inputs.DEPLOY_ENV }}"    
-     - name: Usar variables y secretos del environment 
+     - name: imprimimos variables y secretos del environment 
        run: | 
           echo "Registry host: ${{ vars.REGISTRY_HOST }}" 
           echo "Artifactory URL: ${{ vars.ARTIFACTORY_URL }}" 
           # Los secrets no se imprimen por seguridad 
           echo "Usuario del registry: ${{ secrets.REGISTRY_USER }}" 
-          # NO imprimas el password 
+       
 
 
   cd:
     runs-on: ubuntu-latest 
-    needs: ci 
-    #if: ${{ inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
-    if: > 
-         (github.event_name == 'push' &&
-         (github.ref_name == 'develop' || github.ref_name == 'master')) 
-         ||
-         (github.event_name == 'workflow_dispatch' &&
-         github.event.inputs.RUN_CD == 'true')
+    needs: ci
+
+    # se ejecuta si se ejecute si: inputs.RUN_CD == true (workflow dispatch),
+    #o github.ref_name es develop o master
+    if: ${{ inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
+   
     steps: 
      - name: Checkout 
        uses: actions/checkout@v4
