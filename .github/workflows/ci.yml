@@ -108,6 +108,9 @@ jobs:
     if: > 
          (github.ref_name == 'develop' || github.ref_name == 'master') 
           && github.event.inputs.RUN_CD == 'true'
+           ||
+         (github.event_name == 'workflow_dispatch' &&
+         github.event.inputs.RUN_CD == 'true')
     steps: 
      - name: Checkout 
        uses: actions/checkout@v4
