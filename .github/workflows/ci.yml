@@ -139,6 +139,4 @@ jobs:
           docker compose -f docker-compose.yml down -v 
           echo "Servicios eliminados"
 
-
-
           
