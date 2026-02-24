@@ -106,9 +106,9 @@ jobs:
     needs: ci 
     #if: ${{ inputs.RUN_CD == true || github.ref_name == 'develop' || github.ref_name == 'master' }}
     if: > 
-         (github.ref_name == 'develop' || github.ref_name == 'master') 
-          && github.event.inputs.RUN_CD == 'true'
-           ||
+         (github.event_name == 'push' &&
+         (github.ref_name == 'develop' || github.ref_name == 'master')) 
+         ||
          (github.event_name == 'workflow_dispatch' &&
          github.event.inputs.RUN_CD == 'true')
     steps: 
