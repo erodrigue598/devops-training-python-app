@@ -37,18 +37,18 @@ pipeline {
   stages {
 
      // ejercicio 2
- //  stage('Test-Python') {
-   //  agent {
-     //  docker {
-     //    image 'python:3.6-slim' 
-       //}
-//     }
- //    steps {
-  //     sh 'python --version' 
-  ///     sh 'pip install --upgrade pip' 
-  //     sh 'pip install -r requirements.txt'
-   //    sh 'pytest -q' }
- //  }
+  stage('Test-Python') {
+     agent {
+     docker {
+         image 'python:3.6-slim' 
+       }
+     }
+     steps {
+       sh 'python --version' 
+       sh 'pip install --upgrade pip' 
+       sh 'pip install -r requirements.txt'
+       sh 'pytest -q' }
+   }
     // =========================
     // Ejercicio 3 - Build CI image 
     // ========================= 
