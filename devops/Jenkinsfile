@@ -5,26 +5,50 @@
   piezas (stages, agents, funciones Groovy, Docker build, docker compose, etc.)
   hasta construir un pipeline CI/CD completo.
 */
+//ejercicio 4
+def runInDocker(String image, Closure body) {
+    docker.image(image).inside {
+        body()
+    }
+}
 
 pipeline {
+
+  // =========================
+  // Ejercicio 6.3 (parámetros)
+  // =========================
+   parameters {
+    booleanParam(
+      name: 'RUN_CD',
+      defaultValue: true,
+      description: 'Ejecutar CD manualmente'
+    )
+  }
+
+     environment {
+     IMAGE_NAME = "python-app:${BUILD_NUMBER}"
+     APP_URL = "http://localhost:5001/" 
+   }
+
+
   // `agent any` = el pipeline se ejecuta en cualquier nodo/agente disponible.
   agent any
 
   stages {
 
      // ejercicio 2
- //  stage('Test-Python') {
-   //  agent {
-     //  docker {
-     //    image 'python:3.6-slim' 
-       //}
-//     }
- //    steps {
-  //     sh 'python --version' 
-  ///     sh 'pip install --upgrade pip' 
-  //     sh 'pip install -r requirements.txt'
-   //    sh 'pytest -q' }
- //  }
+  stage('Test-Python') {
+     agent {
+     docker {
+         image 'python:3.6-slim' 
+       }
+     }
+     steps {
+       sh 'python --version' 
+       sh 'pip install --upgrade pip' 
+       sh 'pip install -r requirements.txt'
+       sh 'pytest -q' }
+   }
     // =========================
     // Ejercicio 3 - Build CI image 
     // ========================= 
@@ -42,7 +66,8 @@ pipeline {
     stage('CI - Lint') { 
       steps {
         script { 
-          docker.image(env.CI_IMAGE_NAME).inside {
+      //    docker.image(env.CI_IMAGE_NAME).inside { en el 3 se cambia en el 4
+            runInDocker(env.CI_IMAGE_NAME) {
             sh 'python3 -m pip install -r requirements.txt' 
             sh 'python3 -m pip install flake8 black mypy' 
             sh 'make lint' 
@@ -56,20 +81,70 @@ pipeline {
     stage('CI - Test') { 
       steps { 
         script {
-          docker.image(env.CI_IMAGE_NAME).inside {
+        //  docker.image(env.CI_IMAGE_NAME).inside {
+            runInDocker(env.CI_IMAGE_NAME) {
             sh 'pytest -q' 
           } 
         } 
       } 
     }
+    
+    // ejercicio 5
+stage('Build image') {
+  steps {
+    script {
+     // env.APP_IMAGE_NAME = "python-app:${env.BUILD_NUMBER}"
+    //  docker.build(env.APP_IMAGE_NAME, "-f devops/ci.Dockerfile .")
+      docker.build(env.IMAGE_NAME, "-f devops/ci.Dockerfile .")
+    }
+  }
+}
+// ejercicio 6
+stage('CD') {
+  when { 
+    anyOf { 
+      expression { return params.RUN_CD } 
+      branch 'develop' 
+      branch 'master' 
+    } 
+  }
+  steps {
+    script {
+      // Ejercicio 6.2 - Selección de entorno 
+      env.DEPLOY_ENV = (env.BRANCH_NAME == 'master') ? 'PRO' : 'DEV' 
+      echo "Deploying to ${env.DEPLOY_ENV}" 
+       // Ejercicio 6.3 - Parámetros (build parameters) para activar/desactivar comportamiento
+      echo "CD habilitado: RUN_CD=${params.RUN_CD}, branch=${env.BRANCH_NAME}" 
+// ejercicio 6.4   Variables de entorno
+      echo "Usando imagen: ${env.IMAGE_NAME}" 
+      sh "echo Aplicación disponible en: ${APP_URL}"   
+
       
+      sh 'docker compose up -d'
+      sh 'sleep 5'
+      sh 'docker compose logs app'
+    }
+  }
+//  post {
+//    always {
+ //     sh 'docker compose down --volumes'
+ //   }
+ // }
+}
+
+
+
+    
     stage('Test') {
       /*
         `agent` dentro de un stage permite que SOLO ese stage se ejecute en un contexto concreto.
         En este caso, usamos Docker como capa de virtualizacion: los comandos se ejecutan dentro
         de un contenedor temporal.
       */
-      agent {
+      steps {
+        echo "descativado para python"
+      }
+  /*   agent {
         docker {
           image 'maven:3.8.6-openjdk-11-slim'
         }
@@ -77,7 +152,7 @@ pipeline {
       steps {
         sh 'mvn -version'
         sh 'echo "Stage dummy. En la Practica 2 ejecutaras aqui los tests unitarios."'
-      }
+      }*/
     }
    
     
@@ -88,4 +163,19 @@ pipeline {
             }
         }
   }
+      post {
+        always {
+        echo "Limpieza global del pipeline…"
+         sh 'docker compose down --volumes || true'
+        sh "docker rmi ${env.IMAGE_NAME} || true"
+      }
+     success {
+        echo "SUCCESS"
+      }
+   failure {
+      echo "FAILURE"
+      echo "Mostrando logs para diagnóstico:"
+      sh 'docker compose logs app || true'
+  }
+}
 }
