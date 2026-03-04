@@ -5,12 +5,162 @@
 
 stages:
   - ci
+  - cd
 
-ci:dummy:
+#EJERCICIO 3
+services: 
+  - docker:dind
+ 
+# EJERCICIO 2 — Variables globales
+variables: 
+  IMAGE_NAME: "scalian_training-java-hello-world:0.0.2"        #  imagen final de la app
+  APP_URL: "http://localhost:8084/hello"                       # Endpoint para healthcheck
+  IMAGE_REPO: "mi-aplicacion"                                  #repositorio de imágenes.
+  REGISTRY_HOST: "registry.gitlab.com"                         # registry de GitLab
+  REGISTRY_REPO: "grupo/proyecto"                              # ruta del proyecto
+  COMPOSE_SERVICE: "web"
+
+ 
+
+ci:info:    # dummy: redenomnamos como pide le ejercicio 1        
   stage: ci
   image: alpine:3.19
   script:
     - echo "Repo: $CI_PROJECT_PATH"
     - echo "Branch: $CI_COMMIT_BRANCH"
     - echo "SHA: $CI_COMMIT_SHA"
+    # EJERCICIO 2
+    - echo "IMAGE_REPO: $IMAGE_REPO"
+    - echo "REGISTRY_HOST: $REGISTRY_HOST" 
+    - echo "REGISTRY_REPO: $REGISTRY_REPO"  
+    - echo "COMPOSE_SERVICE: $COMPOSE_SERVICE" 
+
+# EJERCICIO 3 CI con contenedores (Docker como agente)
+# Aqui verificamos si el  código es válido, seguro, limpio y pasa los tests	
+ci:lint:                                                    # Job que ejecuta el lint  
+  stage: ci
+ # image: maven:3.8.6-openjdk-11-slim
+  image: docker:24.0.5	                                     # Imagen del job: cliente Docker     maven:3.8.6-openjdk-11-slim
+  services:
+    - docker:dind                                            #Activa Docker-in-Docker
+  variables:                                                 #Configura variables relacionadas con Docker
+     DOCKER_TLS_CERTDIR: ""                                  #Desactiva el uso de TLS en Docker-in-Docker
+     DOCKER_DRIVER: overlay2                                 # driver de almacenamiento de Docker
+     CI_IMAGE_NAME: "ci-image:latest"                        #Nombre de la imagen de CI que se va a construir
+  script: 
+    - echo "= Construir imagen de CI desde devops/ci.Dockerfile =" 
+    - docker build -t "$CI_IMAGE_NAME" -f devops/ci.Dockerfile .     #Construye una imagen desde ci.Dockerfile, como tenemos 2 proyectos y 2 ci.Dockerfile
+                                                                     #tendremos  
+                                                                     # en Python : instala  Python, pip, pytest, flake8…
+                                                                     # en Java:     instala Java, Maven, JUnit…   
+                                                                     # en los 2 :Make  para ejecutar los comandos del Makefile 
+
+    - echo "=== Ejecutando make lint dentro del contenedor ===" 
+    - docker run --rm "$CI_IMAGE_NAME" make lint                    # Dentro del contenedor se ejecuta make lint.
+                                                                    # dependiendo del proyecto  Makefile ejecutara:
+							                                                      # Python : flake8, black, pylint… 
+                                                                    # Java: maven checkstyle, spotbugs…
+								
+
+ci:test:                                                            # Job que ejecuta los tests
+    stage: ci 
+    image: docker:24.0.5                                            # Cliente Docker
+    services: 
+          - docker:dind                                             # Docker-in-Docker
+    variables:
+       DOCKER_TLS_CERTDIR: ""                                       # Sin TLS	
+       DOCKER_DRIVER: overlay2 	                                    # Driver overlay2
+       CI_IMAGE_NAME: "ci-image:latest"                             # Misma imagen que en lint
+    script: 
+       - echo "= Construir imagen de CI desde devops/ci.Dockerfile =" 
+       - docker build -t "$CI_IMAGE_NAME" -f devops/ci.Dockerfile . 
+       - echo "= Ejecutar make test dentro del contenedor =" 
+       - docker run --rm "$CI_IMAGE_NAME" make test                  # dependiendo del Makefile que tenga el proyecto 
+                                                                     # tests Python:  pytest, unittest…
+						          	                                             # tests :  Java (mvn test)
+
+
+# 	EJERCICIO 4  Build de imagen Docker en CI
+ci:build-image:
+  stage: ci
+  image: docker:27                                                    # Cliente Docker
+  services:  
+       - docker:27-dind                                               # Daemon Docker-in-Docker
+  variables:
+    DOCKER_TLS_CERTDIR: ""                                            # Desactiva TLS en dind
+    DOCKER_DRIVER: overlay2                                           # Driver de almacenamiento
+  script:
+   - echo "= Construir imagen Docker de la aplicación ="    #imagen final de la aplicación.  Se pasa VERSION=$CI_COMMIT_SHORT_SHA para identificar la build. 
+   - docker build \
+        -t $IMAGE_NAME \
+        --build-arg VERSION=$CI_COMMIT_SHORT_SHA \
+        -f devops/Dockerfile .
+    - echo "=== Imagen construida correctamente: $IMAGE_NAME ==="
+
+# EJERCICIO 5  Condiciones por rama: ejecutar CD solo en `develop/maste
+
+cd:deploy:
+  stage: cd
+  image: docker:27
+  services:
+    - docker:27-dind
+
+  rules:
+    # Ejecutar si la rama es develop
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+
+    # Ejecutar si la rama es master
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        ENV_NAME: "PRO"
+      when: on_success
+
+    # Ejecutar si el usuario fuerza CD manualmente
+    - if: '$RUN_CD == "true"'
+      variables:
+        ENV_NAME: "DEV"
+      when: on_success
+
+                     # Si no se cumple ninguna regla  NO ejecutar
+    - when: never
+
+    # ENVIRONMENT DINÁMICO
+  environment:
+    name: $ENV_NAME
+
+   # SCRIPT DEL DEPLOY
+  script:
+    - echo " Ejecutando CD en entorno: $ENV_NAME "
+    - echo "Desplegando con docker compose..."
+
+
+    #EJERCICIO 6     Simulación de despliegue con Docker Compose + cleanup
+    - docker compose up -d                                             # Levanta los contenedores 
+    - echo "Mostrar logs del cotenedor principal " 
+    - docker compose logs --tail=50                                    # Logs recientes del servicio principal 
+    - echo " Comprobando que funciona " 
+    - curl -fsS "$APP_URL"                                             # El contenedor está levantado  
+                                                                       # El servicio está escuchando en el puerto correcto 
+                                                                       # La aplicación responde correctamente  
+
+  after_script: 
+    - echo "=== Cleanup: bajando servicios ===" 
+    - docker compose down --volumes || true       # Limpieza de contenedores y volúmenes 
+    - echo "=== Cleanup: eliminando imagen local ===" 
+    - docker rmi "$IMAGE_NAME" || true 
+
+
+
+
+
+
+
+
+
+
+    
+
 
