@@ -95,7 +95,7 @@ ci:build-image:
         -t $IMAGE_NAME \
         --build-arg VERSION=$CI_COMMIT_SHORT_SHA \
         -f devops/Dockerfile .
-    - echo "=== Imagen construida correctamente: $IMAGE_NAME ==="
+   - echo "=== Imagen construida correctamente: $IMAGE_NAME ==="
 
 # EJERCICIO 5  Condiciones por rama: ejecutar CD solo en `develop/maste
 
