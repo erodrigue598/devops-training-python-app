@@ -17,16 +17,16 @@ services:
  
 # EJERCICIO 2 — Variables globales
 variables: 
-  IMAGE_NAME: "scalian_training-java-hello-world:0.0.2"        #  imagen final de la app
-  APP_URL: "http://localhost:8084/hello"                       # Endpoint para healthcheck
-  IMAGE_REPO: "mi-aplicacion"                                  #repositorio de imágenes.
+  IMAGE_NAME: "scalian_training-java-hello-world:0.0.2"        # imagen final de la app
+  APP_URL: "http://localhost:8084/hello"                       # Endpoint para verificación
+  IMAGE_REPO: "mi-aplicacion"                                  # repositorio de imágenes.
   REGISTRY_HOST: "registry.gitlab.com"                         # registry de GitLab
   REGISTRY_REPO: "grupo/proyecto"                              # ruta del proyecto
-  COMPOSE_SERVICE: "web"
+  COMPOSE_SERVICE: "web"                                       # servicio principal en docker-compose
 
  
 
-ci:info:    # dummy: redenomnamos como pide le ejercicio 1        
+ci:info:    # dummy: renombramos como pide le ejercicio 1        
   stage: ci
   image: alpine:3.19
   script:
@@ -43,23 +43,23 @@ ci:info:    # dummy: redenomnamos como pide le ejercicio 1
 # Aqui verificamos si el  código es válido, seguro, limpio y pasa los tests	
 ci:lint:                                                    # Job que ejecuta el lint  
   stage: ci
- # image: maven:3.8.6-openjdk-11-slim
-  image: docker:24.0.5	                                     # Imagen del job: cliente Docker     maven:3.8.6-openjdk-11-slim
+ # image: maven:3.8.6-openjdk-11-slim redenominamos como pide el ejercicio 1
+  image: docker:24.0.5	                                     # Imagen del job: cliente Docker     
   services:
-    - docker:dind                                            #Activa Docker-in-Docker
-  variables:                                                 #Configura variables relacionadas con Docker
-     DOCKER_TLS_CERTDIR: ""                                  #Desactiva el uso de TLS en Docker-in-Docker
+    - docker:dind                                            # Activa Docker-in-Docker
+  variables:                                                 # Configura variables relacionadas con Docker
+     DOCKER_TLS_CERTDIR: ""                                  # Desactiva el uso de TLS en Docker-in-Docker
      DOCKER_DRIVER: overlay2                                 # driver de almacenamiento de Docker
-     CI_IMAGE_NAME: "ci-image:latest"                        #Nombre de la imagen de CI que se va a construir
+     CI_IMAGE_NAME: "ci-image:latest"                        # Nombre de la imagen de CI que se va a construir
   script: 
     - echo "= Construir imagen de CI desde devops/ci.Dockerfile =" 
-    - docker build -t "$CI_IMAGE_NAME" -f devops/ci.Dockerfile .     #Construye una imagen desde ci.Dockerfile, como tenemos 2 proyectos y 2 ci.Dockerfile
-                                                                     #tendremos  
+    - docker build -t "$CI_IMAGE_NAME" -f devops/ci.Dockerfile .     # Construye una imagen desde ci.Dockerfile, como tenemos 2 proyectos y 2 ci.Dockerfile
+                                                                     # tendremos  
                                                                      # en Python : instala  Python, pip, pytest, flake8…
-                                                                     # en Java:     instala Java, Maven, JUnit…   
+                                                                     # en Java:  instala Java, Maven, JUnit…   
                                                                      # en los 2 :Make  para ejecutar los comandos del Makefile 
 
-    - echo "=== Ejecutando make lint dentro del contenedor ===" 
+    - echo "=== Ejecutando make lint dentro del contenedor ==="     # mensaje para el log
     - docker run --rm "$CI_IMAGE_NAME" make lint                    # Dentro del contenedor se ejecuta make lint.
                                                                     # dependiendo del proyecto  Makefile ejecutara:
 							                                                      # Python : flake8, black, pylint… 
@@ -81,7 +81,7 @@ ci:test:                                                            # Job que ej
        - echo "= Ejecutar make test dentro del contenedor =" 
        - docker run --rm "$CI_IMAGE_NAME" make test                  # dependiendo del Makefile que tenga el proyecto 
                                                                      # tests Python:  pytest, unittest…
-						          	                                             # tests :  Java (mvn test)
+						          	                                 # tests Java : (mvn test)
 
 
 # 	EJERCICIO 4  Build de imagen Docker en CI
@@ -94,14 +94,14 @@ ci:build-image:
     DOCKER_TLS_CERTDIR: ""                                            # Desactiva TLS en dind
     DOCKER_DRIVER: overlay2                                           # Driver de almacenamiento
   script:
-   - echo "= Construir imagen Docker de la aplicación ="    #imagen final de la aplicación.  Se pasa VERSION=$CI_COMMIT_SHORT_SHA para identificar la build. 
+   - echo "= Construir imagen Docker de la aplicación ="    #imagen final de la aplicación. Se pasa VERSION=$CI_COMMIT_SHORT_SHA para identificar la build. 
    - docker build \
         -t $IMAGE_NAME \
         --build-arg VERSION=$CI_COMMIT_SHORT_SHA \
         -f devops/Dockerfile .
    - echo "=== Imagen construida correctamente: $IMAGE_NAME ==="
 
-# EJERCICIO 5  Condiciones por rama: ejecutar CD solo en `develop/maste
+# EJERCICIO 5  Condiciones por rama: ejecutar CD solo en develop/master
 
 cd:deploy:
   stage: cd
@@ -132,7 +132,7 @@ cd:deploy:
     - when: never
 
     # ENVIRONMENT DINÁMICO
-  environment:
+ environment:
     name: $ENV_NAME
 
    # SCRIPT DEL DEPLOY
